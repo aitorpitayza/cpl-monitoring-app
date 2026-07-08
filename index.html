@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CPL Horas">
+<meta name="theme-color" content="#0B1220">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-180.png">
+<title>Ruta fATPL · Horas CPL(A)</title>
+<style>
+  :root{
+    --bg:#0B1220;
+    --panel:#121C2E;
+    --line:#22304A;
+    --text:#E8EDF6;
+    --dim:#8DA0BF;
+    --amber:#FFB454;
+    --green:#4ADE80;
+    --track:#1B2740;
+    --danger:#F87171;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{
+    background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    padding:max(env(safe-area-inset-top),16px) 16px calc(env(safe-area-inset-bottom) + 32px);
+    max-width:520px;margin:0 auto;font-size:16px;line-height:1.45;
+  }
+  .mono{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-variant-numeric:tabular-nums}
+  header{text-align:center;padding:8px 0 4px}
+  .eyebrow{font-size:11px;letter-spacing:.22em;color:var(--dim);text-transform:uppercase}
+  h1{font-size:20px;font-weight:700;margin-top:2px}
+
+  .gauge-wrap{display:flex;justify-content:center;padding:14px 0 6px}
+  .gauge{position:relative;width:200px;height:200px}
+  .gauge svg{transform:rotate(-90deg)}
+  .gauge .val{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+  .gauge .big{font-size:38px;font-weight:700;line-height:1}
+  .gauge .unit{font-size:12px;color:var(--dim);margin-top:4px;letter-spacing:.12em;text-transform:uppercase}
+  .remaining-line{text-align:center;color:var(--amber);font-size:15px;margin-bottom:10px}
+  .remaining-line.done{color:var(--green)}
+
+  section h2{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin:20px 2px 8px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px}
+  .card .top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .card .name{font-size:15px;font-weight:600}
+  .card .ref{font-size:11px;color:var(--dim);white-space:nowrap}
+  .card .sub{font-size:12px;color:var(--dim);margin-top:2px}
+
+  .inrow{display:flex;align-items:center;gap:12px;margin-top:10px}
+  .inrow label{flex:1;font-size:13px;color:var(--dim)}
+  input[type=number]{
+    width:86px;background:var(--bg);border:1px solid var(--line);border-radius:10px;
+    color:var(--text);font-size:17px;padding:8px 10px;text-align:right;
+    font-family:ui-monospace,"SF Mono",Menlo,monospace;
+  }
+  input[type=number]:focus{outline:none;border-color:var(--amber)}
+
+  .bar{height:8px;background:var(--track);border-radius:8px;overflow:hidden;margin-top:10px}
+  .bar i{display:block;height:100%;width:0;background:var(--amber);border-radius:8px;transition:width .3s}
+  .bar i.done{background:var(--green)}
+  .meta{display:flex;justify-content:space-between;margin-top:6px;font-size:13px;color:var(--dim)}
+  .left{color:var(--amber);font-weight:600}
+  .left.done{color:var(--green)}
+
+  .prereq{font-size:12px;margin-top:10px;padding:8px 10px;border-radius:10px;background:var(--bg);border:1px solid var(--line);color:var(--dim)}
+  .prereq.ok{color:var(--green);border-color:rgba(74,222,128,.35)}
+  .prereq.ko{color:var(--amber)}
+
+  .minicheck{display:flex;align-items:flex-start;gap:10px;margin-top:10px;cursor:pointer}
+  .minicheck input{width:20px;height:20px;accent-color:var(--green);flex-shrink:0;margin-top:1px}
+  .minicheck span{font-size:13px;color:var(--text)}
+  .minicheck.ok span{color:var(--green)}
+
+  .donecheck{display:flex;align-items:center;gap:10px;margin-top:12px;padding-top:10px;border-top:1px dashed var(--line);cursor:pointer}
+  .donecheck input{width:22px;height:22px;accent-color:var(--green)}
+  .donecheck span{font-size:14px;font-weight:600}
+  .donecheck.ok span{color:var(--green)}
+
+  /* resumen requisitos CPL */
+  .req{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:8px}
+  .req .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .req .name{font-size:14px;font-weight:600}
+  .req .nums{font-size:13px}
+  .credit{font-size:12px;color:var(--green)}
+
+  .note{font-size:12px;color:var(--dim);margin:16px 2px 12px}
+  .reset{width:100%;background:none;border:1px solid var(--line);color:var(--danger);border-radius:12px;padding:12px;font-size:14px;margin-top:6px}
+  .savemsg{text-align:center;font-size:11px;color:var(--dim);margin-top:10px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Ruta modular · EASA Part-FCL</div>
+  <h1>fATPL — Horas para la CPL(A)</h1>
+</header>
+
+<div class="gauge-wrap">
+  <div class="gauge">
+    <svg width="200" height="200" viewBox="0 0 200 200">
+      <circle cx="100" cy="100" r="88" fill="none" stroke="var(--track)" stroke-width="14"/>
+      <circle id="gArc" cx="100" cy="100" r="88" fill="none" stroke="var(--amber)"
+              stroke-width="14" stroke-linecap="round"
+              stroke-dasharray="553" stroke-dashoffset="553"/>
+    </svg>
+    <div class="val">
+      <div class="big mono" id="gVal">0.0</div>
+      <div class="unit">de 200 h totales</div>
+    </div>
+  </div>
+</div>
+<div class="remaining-line" id="gLeft"></div>
+
+<section>
+  <h2>Requisitos de emisión CPL(A)</h2>
+  <div id="reqList"></div>
+</section>
+
+<section>
+  <h2>Tus horas fuera de los cursos</h2>
+  <div class="card">
+    <div class="sub">PPL + time building. <strong>No incluyas</strong> aquí las horas de los cursos de abajo: se suman solas al total.</div>
+    <div class="inrow"><label>Horas de vuelo (total)</label><input type="number" inputmode="decimal" min="0" step="0.1" id="tb_total"></div>
+    <div class="inrow"><label>De ellas, como PIC</label><input type="number" inputmode="decimal" min="0" step="0.1" id="tb_pic"></div>
+    <div class="inrow"><label>De ellas, travesía (XC) como PIC</label><input type="number" inputmode="decimal" min="0" step="0.1" id="tb_xcpic"></div>
+  </div>
+</section>
+
+<section>
+  <h2>Cursos de la ruta</h2>
+  <div id="courseList"></div>
+</section>
+
+<section>
+  <h2>Hitos generales</h2>
+  <div id="checkList"></div>
+</section>
+
+<p class="note">
+  Objetivos según los mínimos del Part-FCL (Apéndices 3 y 6, FCL.810, FCL.720.A y FCL.745.A).
+  El orden de los cursos es orientativo y las horas de simulador (FSTD) no cuentan para las
+  200 h totales de vuelo. Las horas de examen (skill test) se apuntan como PIC según
+  AMC1 FCL.050. Confirma siempre créditos y requisitos con tu ATO y con AESA.
+</p>
+
+<button class="reset" id="resetBtn">Borrar todos los datos</button>
+<div class="savemsg" id="saveMsg">Los datos se guardan automáticamente en este dispositivo</div>
+
+<script>
+(function(){
+  // ---------- almacenamiento ----------
+  var KEY = "fatpl_cpl_tracker_v2";
+  var mem = null;
+  function load(){
+    try{ var s = localStorage.getItem(KEY); return s ? JSON.parse(s) : {}; }
+    catch(e){ return mem || {}; }
+  }
+  function save(){
+    mem = state;
+    try{ localStorage.setItem(KEY, JSON.stringify(state)); }
+    catch(e){
+      document.getElementById("saveMsg").textContent =
+        "Aviso: este visor no permite guardar. Abre el archivo en Safari para que se guarden los datos.";
+    }
+  }
+  var state = load();
+  state.tb = state.tb || {total:0, pic:0, xcpic:0};
+  state.c  = state.c  || {};
+  state.checks = state.checks || {};
+
+  function num(v){ var n = parseFloat(v); return isNaN(n)||n<0 ? 0 : n; }
+  function fmt(n){ return (Math.round(n*10)/10).toFixed(1); }
+  function cv(course, field){ return (state.c[course] && state.c[course][field]) || 0; }
+  function cdone(course){ return !!(state.c[course] && state.c[course].done); }
+
+  // ---------- definición de cursos ----------
+  // inputs: campos de horas de vuelo real (suman al total) salvo fstd:true
+  var COURSES = [
+    {id:"vfrn", name:"Habilitación de vuelo nocturno (VFR N)", ref:"FCL.810",
+     sub:"5 h nocturnas, con 3 h de doble mando (incl. 1 h de navegación y una travesía doble de ≥50 km) y 5 despegues y 5 aterrizajes completos solo.",
+     inputs:[{f:"night", label:"Horas nocturnas voladas", target:5}],
+     checks:[
+       {f:"dual3",  label:"3 h de doble mando nocturno (incl. 1 h navegación)"},
+       {f:"solo5",  label:"5 despegues y 5 aterrizajes completos solo"}
+     ]},
+    {id:"ir", name:"IR(A) SEP — habilitación instrumental", ref:"Ap. 6 A",
+     sub:"50 h de instrucción instrumental en total: hasta 35 h en simulador (FSTD) y mínimo 15 h en avión.",
+     prereq:{label:"Requiere 50 h de travesía como PIC", need:50, from:"xcpic"},
+     inputs:[
+       {f:"air",  label:"Instrucción IFR en avión", target:15},
+       {f:"fstd", label:"Instrucción IFR en simulador (FSTD)", target:35, fstd:true}
+     ],
+     exam:true,
+     totalTarget:{fields:["air","fstd"], target:50, label:"Total instrucción IR"}},
+    {id:"mep", name:"Habilitación de clase MEP", ref:"FCL.720.A",
+     sub:"6 h de doble mando en multimotor: 2 h 30 min de operación normal y 3 h 30 min de fallo de motor y vuelo asimétrico. Más 7 h de teoría.",
+     prereq:{label:"Requiere 70 h como PIC en avión", need:70, from:"pic"},
+     inputs:[{f:"dual", label:"Doble mando en MEP", target:6}],
+     exam:true,
+     checks:[{f:"theory", label:"7 h de teoría MEP completadas"}]},
+    {id:"mepir", name:"Extensión IR a multimotor (puente MEP-IR)", ref:"Ap. 6 A.14",
+     sub:"5 h de instrucción instrumental en avión multimotor, de las que hasta 3 h pueden ser en simulador.",
+     inputs:[
+       {f:"air",  label:"IFR en avión ME", target:2},
+       {f:"fstd", label:"IFR en simulador", target:3, fstd:true}
+     ],
+     exam:true,
+     totalTarget:{fields:["air","fstd"], target:5, label:"Total puente ME-IR"}},
+    {id:"cpl", name:"Curso CPL(A) modular", ref:"Ap. 3 E",
+     sub:"25 h de doble mando (15 h si ya tienes la IR), incluyendo 5 h en avión complejo. Con IR se acredita la instrucción instrumental del curso.",
+     prereq:{label:"Requiere 150 h de vuelo antes de empezar", need:150, from:"total"},
+     inputs:[
+       {f:"dual", label:"Doble mando del curso", target:25, targetIR:15},
+       {f:"complex", label:"De ellas, en avión complejo", target:5, noSum:true}
+     ],
+     exam:true},
+    {id:"uprt", name:"UPRT avanzado", ref:"FCL.745.A",
+     sub:"3 h de vuelo en doble mando y 5 h de teoría. Necesario antes del primer curso de habilitación de tipo multipiloto.",
+     inputs:[{f:"dual", label:"Vuelo UPRT en doble mando", target:3}],
+     checks:[{f:"theory", label:"5 h de teoría UPRT completadas"}]}
+  ];
+
+  var CHECKS = [
+    {id:"xc300", label:"Travesía VFR de al menos 300 NM (540 km)",
+     small:"Como PIC, con aterrizajes completos en 2 aeródromos distintos al de salida"},
+    {id:"atpl", label:"14 teóricos ATPL aprobados",
+     small:"Necesarios para el ATPL «frozen»; sustituyen a los teóricos CPL e IR"},
+    {id:"medical", label:"Certificado médico de Clase 1 en vigor",
+     small:"Part-MED — necesario para la emisión de la CPL"}
+  ];
+
+  // ---------- requisitos de emisión CPL (calculados) ----------
+  function computed(){
+    var examPic =
+      cv("ir","exam") + cv("mep","exam") + cv("mepir","exam") + cv("cpl","exam");
+    var flightFromCourses =
+      cv("vfrn","night") + cv("ir","air") + cv("mep","dual") +
+      cv("mepir","air") + cv("cpl","dual") + cv("uprt","dual") + examPic;
+    var total = num(state.tb.total) + flightFromCourses;
+    var irDone = cdone("ir");
+    return {
+      total: total,
+      pic: num(state.tb.pic) + examPic,
+      examPic: examPic,
+      xcpic: num(state.tb.xcpic),
+      night: cv("vfrn","night"),
+      instr: cv("ir","air") + cv("ir","fstd") + cv("mepir","air") + cv("mepir","fstd"),
+      irDone: irDone,
+      cplDual: cv("cpl","dual"),
+      cplDualTarget: irDone ? 15 : 25,
+      complex: cv("cpl","complex")
+    };
+  }
+
+  var REQS = [
+    {id:"total", name:"200 h de vuelo total", get:function(c){return c.total}, target:200},
+    {id:"pic",   name:"100 h como PIC", get:function(c){return c.pic}, target:100,
+     caption:function(c){return c.examPic > 0 ? "Incluye "+fmt(c.examPic)+" h de exámenes" : null}},
+    {id:"xcpic", name:"20 h de travesía como PIC", get:function(c){return c.xcpic}, target:20},
+    {id:"night", name:"5 h de vuelo nocturno", get:function(c){return c.night}, target:5},
+    {id:"instr", name:"10 h de instrucción instrumental", get:function(c){return c.instr}, target:10,
+     credit:function(c){return c.irDone ? "Acreditado por tu IR ✓" : null}},
+    {id:"cpldual", name:"Doble mando del curso CPL", get:function(c){return c.cplDual},
+     targetFn:function(c){return c.cplDualTarget}},
+    {id:"complex", name:"5 h en avión complejo", get:function(c){return c.complex}, target:5}
+  ];
+
+  // ---------- construir interfaz ----------
+  var reqList = document.getElementById("reqList");
+  REQS.forEach(function(r){
+    var d = document.createElement("div");
+    d.className = "req";
+    d.innerHTML =
+      '<div class="top"><span class="name">'+r.name+'</span><span class="nums mono" id="rq_n_'+r.id+'"></span></div>'+
+      '<div class="bar"><i id="rq_b_'+r.id+'"></i></div>'+
+      '<div class="meta"><span id="rq_c_'+r.id+'"></span><span class="left" id="rq_l_'+r.id+'"></span></div>';
+    reqList.appendChild(d);
+  });
+
+  ["total","pic","xcpic"].forEach(function(f){
+    var el = document.getElementById("tb_"+f);
+    el.value = state.tb[f] ? state.tb[f] : "";
+    el.addEventListener("input", function(){
+      state.tb[f] = num(el.value); save(); render();
+    });
+  });
+
+  var courseList = document.getElementById("courseList");
+  COURSES.forEach(function(c, idx){
+    state.c[c.id] = state.c[c.id] || {};
+    var card = document.createElement("div");
+    card.className = "card";
+    var html =
+      '<div class="top"><div class="name">'+(idx+1)+'. '+c.name+'</div><div class="ref">'+c.ref+'</div></div>'+
+      '<div class="sub">'+c.sub+'</div>';
+    if(c.prereq){
+      html += '<div class="prereq" id="pr_'+c.id+'"></div>';
+    }
+    var allInputs = c.inputs.slice();
+    if(c.exam){
+      allInputs.push({f:"exam", label:"Examen (skill test) — cuenta como PIC", exam:true});
+    }
+    allInputs.forEach(function(inp){
+      html += '<div class="inrow"><label>'+inp.label+'</label>'+
+        '<input type="number" inputmode="decimal" min="0" step="0.1" id="in_'+c.id+'_'+inp.f+'"></div>';
+    });
+    html += '<div class="bar"><i id="cb_'+c.id+'"></i></div>'+
+            '<div class="meta"><span id="ct_'+c.id+'"></span><span class="left" id="cl_'+c.id+'"></span></div>';
+    (c.checks||[]).forEach(function(ck){
+      html += '<label class="minicheck" id="mcw_'+c.id+'_'+ck.f+'">'+
+        '<input type="checkbox" id="mc_'+c.id+'_'+ck.f+'"><span>'+ck.label+'</span></label>';
+    });
+    html += '<label class="donecheck" id="dcw_'+c.id+'">'+
+      '<input type="checkbox" id="dc_'+c.id+'"><span>Curso completado</span></label>';
+    card.innerHTML = html;
+    courseList.appendChild(card);
+
+    allInputs.forEach(function(inp){
+      var el = document.getElementById("in_"+c.id+"_"+inp.f);
+      el.value = state.c[c.id][inp.f] ? state.c[c.id][inp.f] : "";
+      el.addEventListener("input", function(){
+        state.c[c.id][inp.f] = num(el.value); save(); render();
+      });
+    });
+    (c.checks||[]).forEach(function(ck){
+      var box = document.getElementById("mc_"+c.id+"_"+ck.f);
+      box.checked = !!state.c[c.id]["ck_"+ck.f];
+      var wrap = document.getElementById("mcw_"+c.id+"_"+ck.f);
+      wrap.classList.toggle("ok", box.checked);
+      box.addEventListener("change", function(){
+        state.c[c.id]["ck_"+ck.f] = box.checked;
+        wrap.classList.toggle("ok", box.checked);
+        save(); render();
+      });
+    });
+    var dbox = document.getElementById("dc_"+c.id);
+    dbox.checked = cdone(c.id);
+    document.getElementById("dcw_"+c.id).classList.toggle("ok", dbox.checked);
+    dbox.addEventListener("change", function(){
+      state.c[c.id].done = dbox.checked;
+      document.getElementById("dcw_"+c.id).classList.toggle("ok", dbox.checked);
+      save(); render();
+    });
+  });
+
+  var checkList = document.getElementById("checkList");
+  CHECKS.forEach(function(ck){
+    var lab = document.createElement("label");
+    lab.className = "check card minicheck";
+    lab.style.marginTop = "0";
+    lab.innerHTML = '<input type="checkbox" id="gk_'+ck.id+'">'+
+      '<span>'+ck.label+'<small style="display:block;color:var(--dim);font-size:12px;font-weight:400">'+ck.small+'</small></span>';
+    checkList.appendChild(lab);
+    var box = lab.querySelector("input");
+    box.checked = !!state.checks[ck.id];
+    lab.classList.toggle("ok", box.checked);
+    box.addEventListener("change", function(){
+      state.checks[ck.id] = box.checked;
+      lab.classList.toggle("ok", box.checked);
+      save();
+    });
+  });
+
+  document.getElementById("resetBtn").addEventListener("click", function(){
+    if(!confirm("¿Seguro que quieres borrar todas las horas y marcas?")) return;
+    state = {tb:{total:0,pic:0,xcpic:0}, c:{}, checks:{}};
+    save();
+    location.reload();
+  });
+
+  // ---------- pintado ----------
+  var CIRC = 2 * Math.PI * 88;
+  function paintBar(barId, leftId, val, target, tgtId, tgtLabel){
+    var pct = target > 0 ? Math.min(1, val/target) : 0;
+    var bar = document.getElementById(barId);
+    bar.style.width = (pct*100)+"%";
+    bar.classList.toggle("done", pct >= 1);
+    if(tgtId) document.getElementById(tgtId).textContent = tgtLabel;
+    var l = document.getElementById(leftId);
+    l.textContent = pct >= 1 ? "Cumplido ✓" : "Faltan "+fmt(target-val)+" h";
+    l.classList.toggle("done", pct >= 1);
+  }
+
+  function render(){
+    var c = computed();
+
+    // gauge
+    var pct = Math.min(1, c.total/200);
+    var arc = document.getElementById("gArc");
+    arc.style.strokeDashoffset = CIRC*(1-pct);
+    arc.style.stroke = pct >= 1 ? "var(--green)" : "var(--amber)";
+    document.getElementById("gVal").textContent = fmt(c.total);
+    var gLeft = document.getElementById("gLeft");
+    if(pct >= 1){
+      gLeft.textContent = "Mínimo de 200 h alcanzado ✓";
+      gLeft.classList.add("done");
+    } else {
+      gLeft.textContent = "Te quedan "+fmt(200-c.total)+" h de vuelo total";
+      gLeft.classList.remove("done");
+    }
+
+    // requisitos CPL
+    REQS.forEach(function(r){
+      var target = r.targetFn ? r.targetFn(c) : r.target;
+      var val = r.get(c);
+      document.getElementById("rq_n_"+r.id).textContent = fmt(val)+" / "+target+" h";
+      var creditMsg = r.credit ? r.credit(c) : null;
+      var capEl = document.getElementById("rq_c_"+r.id);
+      var pct2 = creditMsg ? 1 : Math.min(1, val/target);
+      var bar = document.getElementById("rq_b_"+r.id);
+      bar.style.width = (pct2*100)+"%";
+      bar.classList.toggle("done", pct2 >= 1);
+      var l = document.getElementById("rq_l_"+r.id);
+      if(creditMsg){
+        capEl.innerHTML = '<span class="credit">'+creditMsg+'</span>';
+        l.textContent = ""; 
+      } else {
+        var cap = r.caption ? r.caption(c) : null;
+        capEl.textContent = cap || "";
+        l.textContent = pct2 >= 1 ? "Cumplido ✓" : "Faltan "+fmt(target-val)+" h";
+        l.classList.toggle("done", pct2 >= 1);
+      }
+    });
+
+    // cursos
+    COURSES.forEach(function(co){
+      var val, target, label;
+      if(co.totalTarget){
+        val = co.totalTarget.fields.reduce(function(s,f){ return s + cv(co.id,f); }, 0);
+        target = co.totalTarget.target;
+        label = co.totalTarget.label+": objetivo "+target+" h";
+      } else {
+        var main = co.inputs[0];
+        val = cv(co.id, main.f);
+        target = (co.id === "cpl" && cdone("ir")) ? main.targetIR : main.target;
+        label = "Objetivo: "+target+" h";
+      }
+      paintBar("cb_"+co.id, "cl_"+co.id, val, target, "ct_"+co.id, label);
+
+      if(co.prereq){
+        var have = co.prereq.from === "total" ? c.total :
+                   co.prereq.from === "pic"   ? c.pic  : c.xcpic;
+        var el = document.getElementById("pr_"+co.id);
+        var ok = have >= co.prereq.need;
+        el.textContent = co.prereq.label + " — " +
+          (ok ? "cumplido ✓" : "llevas "+fmt(have)+" h, faltan "+fmt(co.prereq.need-have)+" h");
+        el.classList.toggle("ok", ok);
+        el.classList.toggle("ko", !ok);
+      }
+    });
+  }
+  render();
+})();
+</script>
+<script>
+// Modo sin conexión: solo se registra cuando la app se sirve por https (p. ej. GitHub Pages)
+if ("serviceWorker" in navigator && location.protocol === "https:") {
+  navigator.serviceWorker.register("sw.js").catch(function(){ /* sin bloqueo si falla */ });
+}
+</script>
+</body>
+</html>
